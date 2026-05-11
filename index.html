@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>綜合能力評量測驗</title>
+    <style>
+        :root { --primary: #1e40af; --bg: #f3f4f6; --card: #ffffff; --text: #1e293b; }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: var(--bg); color: var(--text); padding: 20px; line-height: 1.6; }
+        .container { max-width: 850px; margin: 0 auto; background: var(--card); padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h1 { color: var(--primary); text-align: center; border-bottom: 3px solid var(--primary); padding-bottom: 15px; margin-bottom: 30px; }
+        h2 { background: #dbeafe; padding: 12px 20px; border-left: 6px solid var(--primary); margin-top: 40px; border-radius: 0 4px 4px 0; font-size: 1.3rem; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; background: #f8fafc; padding: 25px; border: 1px solid #e2e8f0; border-radius: 8px; }
+        .info-grid label { display: block; font-weight: bold; margin-bottom: 8px; color: #475569; }
+        .info-grid input, .info-grid select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
+        
+        /* 題目區塊 */
+        .q-block { margin-bottom: 30px; padding: 20px; border-bottom: 1px solid #f1f5f9; }
+        .q-text { font-weight: bold; font-size: 1.1rem; margin-bottom: 15px; display: block; color: #0f172a; }
+        
+        /* 第 10 題表格樣式 */
+        .logic-matrix { width: 100%; max-width: 400px; border-collapse: collapse; margin: 15px 0; text-align: center; background: white; }
+        .logic-matrix td, .logic-matrix th { border: 1px solid #cbd5e1; padding: 10px; font-size: 1.2rem; width: 33%; }
+        .logic-matrix th { background: #f1f5f9; font-size: 0.9rem; color: #64748b; }
+
+        /* 第 11 題正方體展開圖樣式 */
+        .cube-net { border-collapse: collapse; margin: 15px 0; text-align: center; background: white; }
+        .cube-net td { width: 45px; height: 45px; font-size: 1.2rem; font-weight: bold; }
+        .cube-net td.box { border: 1px solid #1e293b; } 
+
+        /* 第 12 題圓點規律圖樣式 */
+        .q12-container { display: flex; flex-wrap: wrap; gap: 15px; margin: 20px 0; text-align: center; }
+        .q12-figure { border: 1px solid #cbd5e1; padding: 15px; background: white; flex: 1; min-width: 120px; box-sizing: border-box; }
+        .q12-title { font-weight: bold; margin-bottom: 15px; color: #475569; font-size: 0.95rem; }
+        .dot-grid { border-collapse: collapse; margin: 0 auto 15px auto; }
+        .dot-grid td { width: 50px; height: 35px; border: 1px solid #94a3b8; font-size: 1.2rem; vertical-align: middle; text-align: center; }
+        .q12-caption { font-size: 0.9rem; color: #64748b; }
+
+        /* 選項樣式 */
+        .opt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+        .opt-label { cursor: pointer; padding: 14px; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; transition: all 0.2s; }
+        .opt-label:hover { background: #f1f5f9; border-color: var(--primary); }
+        .opt-label input { margin-right: 15px; transform: scale(1.3); }
+        
+        /* 按鈕與訊息 */
+        .submit-btn { width: 100%; background: var(--primary); color: white; border: none; padding: 20px; font-size: 1.25rem; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 50px; transition: background 0.3s; }
+        .submit-btn:hover { background: #1e3a8a; }
+        .submit-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+        #msg { text-align: center; margin-top: 25px; font-weight: bold; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>綜合能力評量測驗</h1>
+    
+    <form id="quizForm">
+        <div class="info-grid">
+            <div>
+                <label>受測者姓名</label>
+                <input type="text" id="name" required placeholder="請填寫完整姓名">
+            </div>
+            <div>
+                <label>面試區域</label>
+                <select id="area" required>
+                    <option value="">請選擇區域</option>
+                    <option value="Taipei">台北區</option>
+                    <option value="Taoyuan">桃園區</option>
+                    <option value="Taichung">台中區</option>
+                    <option value="Kaohsiung">高雄區</option>
+                </select>
+            </div>
+        </div>
+
+        <h2>一、 邏輯推理測驗 (20 題)</h2>
+        <div id="logicContainer"></div>
+
+        <h2>二、 性格色彩特質自評 (12 題)</h2>
+        <p style="color: #64748b; margin: 10px 0 20px 20px;">* 請依直覺選出最符合您的描述，無標準答案。</p>
+        <div id="colorContainer"></div>
+
+        <button type="submit" id="submitBtn" class="submit-btn">確認資訊無誤，送出測驗</button>
+        <div id="msg"></div>
+    </form>
+</div>
+
+<script>
+    // 邏輯測驗題目
+    const logicQs = [
+        { q: "字母序列：A → C → B → D → C → E → D → ？", opts: {A:"D", B:"E", C:"F", D:"G"} },
+        { q: "數列規律：3 → 5 → 9 → 17 → 33 → ？", opts: {A:"48", B:"57", C:"65", D:"72"} },
+        { q: "數列規律：1 → 2 → 4 → 7 → 11 → 16 → ？", opts: {A:"20", B:"22", C:"25", D:"32"} },
+        { q: "前提1：所有老師都讀過大學；前提2：小王讀過大學。結論：小王是老師。", opts: {A:"不一定成立", B:"一定成立", C:"一定不成立", D:"無法判斷"} },
+        { q: "「如果下班後去健身，隔天一定會肌肉痠痛。」下列推論何者一定成立？", opts: {A:"痠痛代表昨晚健身了", B:"沒健身就不會痠痛", C:"隔天沒有肌肉痠痛，代表昨晚沒健身", D:"去健身和肌肉痠痛互相決定"} },
+        { q: "評論：「這本書一定好看因為作者知名。他知名是因為寫了這本書。」此說法最大的問題是？", opts: {A:"說法完全正確", B:"循環論證（用結論當理由）", C:"沒描述內容", D:"定義不夠清晰"} },
+        { q: "研究：「早睡的人平均收入較高。」下列哪個解釋最合理？", opts: {A:"早睡直接提高收入", B:"高收入的人才能早睡", C:"自律性高的人具備這兩種特質", D:"純屬巧合"} },
+        { q: "方位：左轉90° → 左轉90° → 右轉90° → 後轉180° 後面朝「北」，起點朝？", opts: {A:"東", B:"西", C:"南", D:"北"} },
+        { q: "摺紙：正方形紙左右對折，再上下對折，剪去「右上角」後展開，有幾個缺口？", opts: {A:"1 個", B:"2 個", C:"4 個", D:"8 個"} },
+        { 
+            q: "下方 3×3 矩陣中，每一「行」（橫列）和每一「欄」（直行）同時滿足圖形（○、△、□）與數量（1、2、3個）各出現一次的規律。請問「？」格應填入？", 
+            hasTable: true,
+            opts: {A:"△△△", B:"△△", C:"○△△", D:"○○○"} 
+        },
+        { 
+            q: "下方是一個正方體的十字展開圖，面上標有 1 到 6。<br><br>預設折疊時「3 號面」為前面、「1 號面」為頂面。<br>現在將此正方體「旋轉」，讓 3 號面變成「底面」，請問此時哪一面會變成「頂面」？", 
+            hasCubeNet: true,
+            opts: {A:"1", B:"4", C:"5", D:"6"} 
+        },
+        { 
+            q: "下方四個圖形各為「2×2 方格內含一個小圓點（●）」，圓點的角落位置依照「某個固定規律」變化。<br>請找出規律，圖 4 應為何？", 
+            hasDotGrid: true,
+            opts: {A:"圓點在「右下角」", B:"圓點在「左下角」（回到起點）", C:"圓點在「中央」", D:"圓點消失"} 
+        },
+        { q: "計算：讀書頁數每天為前天 2 倍。第 3, 4, 5 天總共 112 頁，第 1 天讀幾頁？", opts: {A:"2 頁", B:"3 頁", C:"4 頁", D:"6 頁"} },
+        { q: "漲跌：商品先漲價 20%，再打八折。最終售價相對原價？", opts: {A:"漲 4%", B:"不變", C:"跌 4%", D:"跌 2%"} },
+        { q: "機率：盒內有「紅、紅、藍、藍、黃」，連抽 2 張不放回，顏色相同的機率？", opts: {A:"1/10", B:"1/5", C:"2/5", D:"1/2"} },
+        { q: "推理：甲：乙犯規；乙：我沒犯規；丙：甲說謊。僅一人犯規且僅一人說真話，誰犯規？", opts: {A:"甲", B:"乙", C:"丙", D:"無法判斷"} },
+        { q: "排程：甲選奇數日(1,3,5)，乙=甲+2，丙=乙-1，丙不選週二。丙選的是週幾？", opts: {A:"週二", B:"週三", C:"週四", D:"週五"} },
+        { q: "六人賽跑：A比B快；C比D慢；E在B與F之間；F緊接在A之後且比D快；C不是最後一名。誰是最後一名？", opts: {A:"選手 B", B:"選手 C", C:"選手 E", D:"選手 F"} },
+        { q: "排列：甲不能在最右，乙必須在丙的右邊（不一定緊鄰），三本書有幾種排法？", opts: {A:"1 種", B:"2 種", C:"3 種", D:"4 種"} },
+        { q: "連鎖：張三曠職→李四遲到；李四遲到→王五加班；王五加班→外送。今天沒外送且張三沒曠職，推論？", opts: {A:"李四沒遲到，王五可能加班", B:"李四不一定遲到", C:"李四沒遲到且王五沒加班", D:"無法確定"} }
+    ];
+
+    const colorQs = [
+        { q: "朋友約你出去玩，你通常…", opts: {A:"馬上決定時間地點", B:"找越多人越好", C:"配合大家決定", D:"先看行程與天氣"} },
+        { q: "工作遇到問題，第一反應是…", opts: {A:"馬上想辦法解決", B:"找人討論一起想", C:"先關心受影響的人", D:"分析原因找根本問題"} },
+        { q: "開會時，你通常扮演的角色是…", opts: {A:"帶領討論做決定", B:"提出創意想法", C:"確保每人都有發言", D:"記錄並整理重點"} },
+        { q: "面對衝突，你傾向…", opts: {A:"直接面對講清楚", B:"輕鬆化解氣氛", C:"先理解對方的感受", D:"冷靜分析對錯"} },
+        { q: "你最受不了的事情是…", opts: {A:"拖拉沒效率", B:"無聊沒變化", C:"對人冷漠不在乎", D:"粗心不精確"} },
+        { q: "別人對你的第一印象…", opts: {A:"很有主見與果斷", B:"很陽光有活力", C:"溫和好相處", D:"冷靜且可靠"} },
+        { q: "計劃旅行時，你負責…", opts: {A:"決定目的地與行程", B:"找好吃好玩的景點", C:"確認大家的需求", D:"訂票、查預算"} },
+        { q: "壓力大的時候，你通常…", opts: {A:"更拼命搞定一切", B:"焦慮且話變多", C:"悶著自己消化", D:"過度分析與猶豫"} },
+        { q: "好的團隊最重要的是…", opts: {A:"目標明確執行力強", B:"氣氛好大家開心", C:"互相信任支持", D:"分工清楚品質穩定"} },
+        { q: "收到禮物時，最開心的是…", opts: {A:"實用的東西", B:"有驚喜創意的", C:"代表心意在乎我", D:"高品質精挑選"} },
+        { q: "你整理東西的方式…", opts: {A:"快速分類不用的丟", B:"看心情或中途分心", C:"慢慢來充滿回憶", D:"按類別排得整齊"} },
+        { q: "你希望別人怎麼跟你溝通？", opts: {A:"直接說重點別廢話", B:"輕鬆幽默點", C:"溫和有人情味", D:"清楚條理有依據"} }
+    ];
+
+    // 初始化題目
+    function init() {
+        const lContainer = document.getElementById('logicContainer');
+        logicQs.forEach((item, i) => {
+            let html = `<div class="q-block"><span class="q-text">${i+1}. ${item.q}</span>`;
+            
+            // 插入第 10 題表格
+            if (item.hasTable) {
+                html += `
+                <table class="logic-matrix">
+                    <tr><th>第一欄</th><th>第二欄</th><th>第三欄</th></tr>
+                    <tr><td>○○○</td><td>△△</td><td>□</td></tr>
+                    <tr><td>△</td><td>□□□</td><td>○○</td></tr>
+                    <tr><td>□□</td><td>○</td><td>？</td></tr>
+                </table>`;
+            }
+
+            // 插入第 11 題正方體展開圖
+            if (item.hasCubeNet) {
+                html += `
+                <table class="cube-net">
+                    <tr><td></td><td class="box">1</td><td></td><td></td></tr>
+                    <tr><td class="box">2</td><td class="box">3</td><td class="box">4</td><td class="box">5</td></tr>
+                    <tr><td></td><td class="box">6</td><td></td><td></td></tr>
+                </table>`;
+            }
+
+            // 插入第 12 題圓點規律圖
+            if (item.hasDotGrid) {
+                html += `
+                <div class="q12-container">
+                    <div class="q12-figure">
+                        <div class="q12-title">圖 1</div>
+                        <table class="dot-grid"><tr><td></td><td></td></tr><tr><td>●</td><td></td></tr></table>
+                        <div class="q12-caption">左下角</div>
+                    </div>
+                    <div class="q12-figure">
+                        <div class="q12-title">圖 2</div>
+                        <table class="dot-grid"><tr><td>●</td><td></td></tr><tr><td></td><td></td></tr></table>
+                        <div class="q12-caption">左上角</div>
+                    </div>
+                    <div class="q12-figure">
+                        <div class="q12-title">圖 3</div>
+                        <table class="dot-grid"><tr><td></td><td>●</td></tr><tr><td></td><td></td></tr></table>
+                        <div class="q12-caption">右上角</div>
+                    </div>
+                    <div class="q12-figure">
+                        <div class="q12-title">圖 4</div>
+                        <table class="dot-grid"><tr><td></td><td></td></tr><tr><td></td><td></td></tr></table>
+                        <div class="q12-caption" style="color: #dc2626; font-weight: bold;">？</div>
+                    </div>
+                </div>`;
+            }
+
+            html += `<div class="opt-grid">`;
+            for (let k in item.opts) {
+                html += `<label class="opt-label"><input type="radio" name="logic_${i}" value="${k}" required> ${k}. ${item.opts[k]}</label>`;
+            }
+            lContainer.innerHTML += html + `</div></div>`;
+        });
+
+        const cContainer = document.getElementById('colorContainer');
+        colorQs.forEach((item, i) => {
+            let html = `<div class="q-block"><span class="q-text">${i+1}. ${item.q}</span><div class="opt-grid">`;
+            for (let k in item.opts) {
+                html += `<label class="opt-label"><input type="radio" name="color_${i}" value="${k}" required> ${item.opts[k]}</label>`;
+            }
+            cContainer.innerHTML += html + `</div></div>`;
+        });
+    }
+
+    document.getElementById('quizForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        const msg = document.getElementById('msg');
+        btn.disabled = true;
+        msg.innerText = "測驗送出中，請稍候...";
+        msg.style.color = "blue";
+
+        let logicAnswers = [];
+        logicQs.forEach((_, i) => {
+            logicAnswers.push({ q: i+1, userAns: document.querySelector(`input[name="logic_${i}"]:checked`).value });
+        });
+
+        let personality = { A: 0, B: 0, C: 0, D: 0 };
+        for(let i=0; i<12; i++) {
+            const val = document.querySelector(`input[name="color_${i}"]:checked`).value;
+            personality[val]++;
+        }
+
+        const payload = {
+            name: document.getElementById('name').value,
+            date: new Date().toLocaleDateString(),
+            managerArea: document.getElementById('area').value,
+            logicDetails: logicAnswers,
+            personality: personality
+        };
+
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzs7TkLhkUN745qvSaDbeQLDX_Bfu5sN4Gzy2-djkozGJ5mvLZFqFj5TXy4OlkqizMp/exec";
+
+        fetch(GAS_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        }).then(() => {
+            msg.innerText = "測驗已成功送出！請告知現場人員。";
+            msg.style.color = "green";
+        }).catch(() => {
+            msg.innerText = "連線發生錯誤，請截圖後通知人員。";
+            msg.style.color = "red";
+            btn.disabled = false;
+        });
+    });
+
+    init();
+</script>
+</body>
+</html>
